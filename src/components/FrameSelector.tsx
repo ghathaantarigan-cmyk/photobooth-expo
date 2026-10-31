@@ -18,13 +18,12 @@ export default function FrameSelector({
   const [selectedPhotoIndices, setSelectedPhotoIndices] = useState<number[]>([
     0, 1, 2,
   ]);
+  const [isRendering, setIsRendering] = useState<boolean>(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleSelectFrame = (frame: FrameConfig) => {
     setSelectedFrame(frame);
-    if (frame.photoCount === 4) {
-      setSelectedPhotoIndices([0, 1, 2, 3]);
-    } else if (frame.photoCount === 3) {
+    if (frame.photoCount === 3) {
       setSelectedPhotoIndices([0, 1, 2]);
     } else {
       setSelectedPhotoIndices([0, 1]);
@@ -73,21 +72,42 @@ export default function FrameSelector({
     canvas.width = 1080;
     canvas.height = 1920;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let isMounted = true;
+    setIsRendering(true);
 
-    const frameImg = new Image();
-    frameImg.src = selectedFrame.image;
+    const renderCanvas = async () => {
+      // Clear background putih
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    frameImg.onload = () => {
-      let loadedCount = 0;
-      const totalSlots = selectedFrame.slots.length;
+      // Load Foto
+      const photoPromises = selectedFrame.slots.map((_, index) => {
+        return new Promise<HTMLImageElement>((resolve) => {
+          const img = new Image();
+          const photoSrcIndex = selectedPhotoIndices[index] ?? index;
+          img.src = photos[photoSrcIndex];
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(img);
+        });
+      });
 
+      // Load Frame PNG
+      const framePromise = new Promise<HTMLImageElement>((resolve) => {
+        const img = new Image();
+        img.src = selectedFrame.image;
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(img);
+      });
+
+      const loadedPhotos = await Promise.all(photoPromises);
+      const loadedFrame = await framePromise;
+
+      if (!isMounted) return;
+
+      // 1. Gambar Foto di Slot
       selectedFrame.slots.forEach((slot: FrameSlot, index: number) => {
-        const photoImg = new Image();
-        const photoSrcIndex = selectedPhotoIndices[index] ?? index;
-        photoImg.src = photos[photoSrcIndex];
-
-        photoImg.onload = () => {
+        const photoImg = loadedPhotos[index];
+        if (photoImg && photoImg.width > 0) {
           drawImageCover(
             ctx,
             photoImg,
@@ -96,13 +116,21 @@ export default function FrameSelector({
             slot.width,
             slot.height,
           );
-          loadedCount++;
-
-          if (loadedCount === totalSlots) {
-            ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
-          }
-        };
+        }
       });
+
+      // 2. Gambar Frame PNG di atas Foto
+      if (loadedFrame && loadedFrame.width > 0) {
+        ctx.drawImage(loadedFrame, 0, 0, canvas.width, canvas.height);
+      }
+
+      setIsRendering(false);
+    };
+
+    renderCanvas();
+
+    return () => {
+      isMounted = false;
     };
   }, [selectedFrame, selectedPhotoIndices, photos]);
 
@@ -116,78 +144,116 @@ export default function FrameSelector({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 items-center justify-center p-4 md:p-6 w-full max-w-7xl relative z-10 select-none font-sans pointer-events-auto my-auto">
-      {/* PREVIEW CANVAS HITAM (UKURAN DIPERBESAR KONSISTEN DENGAN KAMERA) */}
-      <div className="w-[360px] sm:w-[420px] md:w-[460px] aspect-[9/16] relative shadow-2xl rounded-3xl overflow-hidden border-4 border-slate-900 bg-black shrink-0">
+    <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-center justify-center p-4 md:p-6 w-full max-w-7xl relative z-10 select-none font-sans pointer-events-auto my-auto">
+      {/* CANVAS PREVIEW (Responsif untuk HP & Desktop) */}
+      <div className="w-[280px] sm:w-[360px] md:w-[420px] aspect-[9/16] relative shadow-2xl rounded-3xl overflow-hidden border-4 border-slate-900 bg-white shrink-0 group">
         <canvas ref={canvasRef} className="w-full h-full object-contain" />
+
+        {/* Loading Indicator saat render frame */}
+        {isRendering && (
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center">
+            <span className="text-[#388D93] text-sm font-bold animate-pulse bg-white/90 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+              Memproses Bingkai...
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* PANEL KENDALI KANAN */}
-      <div className="flex flex-col justify-between gap-6 w-full max-w-lg bg-white/95 p-6 md:p-8 rounded-3xl border border-slate-200 shadow-xl relative z-20 pointer-events-auto">
+      {/* PANEL KENDALI INTERAKTIF */}
+      <div className="flex flex-col justify-between gap-5 w-full max-w-lg bg-white/95 p-5 md:p-7 rounded-3xl border border-slate-200 shadow-xl relative z-20 pointer-events-auto">
+        {/* 1. Pilih Jenis Frame */}
         <div>
-          <h3 className="text-[#388D93] text-lg font-bold mb-3 tracking-wide">
-            1. Pilih Jenis Frame
-          </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[#388D93] text-base md:text-lg font-extrabold tracking-wide">
+              1. Pilih Jenis Frame
+            </h3>
+            <span className="text-[11px] text-slate-400 font-semibold bg-slate-100 px-2.5 py-1 rounded-full">
+              {FRAMES.length} Pilihan
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
             {FRAMES.map((frame: FrameConfig) => (
               <button
                 key={frame.id}
                 type="button"
                 onClick={() => handleSelectFrame(frame)}
-                className={`p-3.5 rounded-xl border-2 text-xs md:text-sm font-bold transition cursor-pointer active:scale-95 ${
+                className={`p-3 md:p-3.5 rounded-2xl border-2 text-xs md:text-sm font-bold transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-between ${
                   selectedFrame.id === frame.id
-                    ? "bg-[#388D93] border-[#388D93] text-white shadow-md"
-                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    ? "bg-[#388D93] border-[#388D93] text-white shadow-md ring-2 ring-[#388D93]/30"
+                    : "bg-slate-50 border-slate-200/90 text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                {frame.name}
+                <span>{frame.name}</span>
+                {selectedFrame.id === frame.id && (
+                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                )}
               </button>
             ))}
           </div>
         </div>
 
+        {/* 2. Atur Posisi Foto */}
         <div>
-          <h3 className="text-[#388D93] text-lg font-bold mb-3 tracking-wide">
+          <h3 className="text-[#388D93] text-base md:text-lg font-extrabold mb-3 tracking-wide">
             2. Atur Posisi Foto
           </h3>
-          <div className="flex flex-col gap-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <div className="flex flex-col gap-3 bg-slate-50/90 p-3.5 md:p-4 rounded-2xl border border-slate-200/80">
             {selectedFrame.slots.map((_: FrameSlot, slotIdx: number) => (
-              <div key={slotIdx} className="flex items-center gap-3">
-                <span className="text-slate-500 font-semibold text-xs w-16">
-                  Slot {slotIdx + 1}:
+              <div
+                key={slotIdx}
+                className="flex items-center justify-between gap-2"
+              >
+                <span className="text-slate-600 font-bold text-xs shrink-0 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                  Slot {slotIdx + 1}
                 </span>
-                <div className="flex gap-2.5">
-                  {photos.map((p: string, pIdx: number) => (
-                    <img
-                      key={pIdx}
-                      src={p}
-                      alt={`Photo ${pIdx + 1}`}
-                      onClick={() => handleSwapSlotPhoto(slotIdx, pIdx)}
-                      className={`w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover cursor-pointer border-3 transition transform ${
-                        selectedPhotoIndices[slotIdx] === pIdx
-                          ? "border-[#388D93] scale-105 shadow-md"
-                          : "border-transparent opacity-50 hover:opacity-100"
-                      }`}
-                    />
-                  ))}
+
+                <div className="flex gap-2">
+                  {photos.map((p: string, pIdx: number) => {
+                    const isSelected = selectedPhotoIndices[slotIdx] === pIdx;
+                    return (
+                      <button
+                        key={pIdx}
+                        type="button"
+                        onClick={() => handleSwapSlotPhoto(slotIdx, pIdx)}
+                        className={`relative rounded-xl overflow-hidden transition-all duration-200 active:scale-90 cursor-pointer border-2 ${
+                          isSelected
+                            ? "border-[#388D93] ring-2 ring-[#388D93]/30 shadow-md scale-105"
+                            : "border-transparent opacity-40 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={p}
+                          alt={`Foto ${pIdx + 1}`}
+                          className="w-11 h-11 md:w-13 md:h-13 object-cover"
+                        />
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-[#388D93]/20 flex items-center justify-center">
+                            <span className="w-2 h-2 rounded-full bg-white shadow-xs" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex gap-4 mt-2">
+        {/* Action Buttons */}
+        <div className="flex gap-3 mt-1">
           <button
             type="button"
             onClick={onRetake}
-            className="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-4 rounded-2xl transition active:scale-95 cursor-pointer text-base"
+            className="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl transition-all duration-150 active:scale-95 cursor-pointer text-sm md:text-base border border-slate-200"
           >
             Ulang Foto
           </button>
           <button
             type="button"
             onClick={handleGenerateFinalImage}
-            className="w-1/2 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold py-4 rounded-2xl shadow-lg transition active:scale-95 cursor-pointer text-base"
+            className="w-1/2 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-150 active:scale-95 cursor-pointer text-sm md:text-base border border-white/20"
           >
             Cetak QR Code
           </button>

@@ -10,138 +10,146 @@ type Step = "IDLE" | "CAMERA" | "SELECTOR" | "RESULT";
 
 export default function Home() {
   const [step, setStep] = useState<Step>("IDLE");
-  const [rawPhotos, setRawPhotos] = useState<string[]>([]);
+  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [downloadUrl, setDownloadUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [resultUrl, setResultUrl] = useState<string>("");
+
+  const handleStart = () => {
+    setCapturedPhotos([]);
+    setStep("CAMERA");
+  };
 
   const handleCaptureComplete = (photos: string[]) => {
-    setRawPhotos(photos);
+    setCapturedPhotos(photos);
     setStep("SELECTOR");
   };
 
   const handleConfirmFrame = async (finalBlob: Blob) => {
     setIsUploading(true);
-    const uniqueId = crypto.randomUUID();
+    const photoId = crypto.randomUUID();
+    const filePath = `${photoId}.png`;
 
-    const { error } = await supabase.storage
-      .from("photobooth")
-      .upload(`${uniqueId}.png`, finalBlob, { contentType: "image/png" });
+    try {
+      const { error } = await supabase.storage
+        .from("photobooth")
+        .upload(filePath, finalBlob, { contentType: "image/png" });
 
-    setIsUploading(false);
+      if (error) throw error;
 
-    if (error) {
-      alert("Gagal mengunggah foto!");
-      console.error(error);
-      return;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
+      const downloadLink = `${baseUrl}/p/${photoId}`;
+      setDownloadUrl(downloadLink);
+      setStep("RESULT");
+    } catch (err) {
+      console.error("Gagal mengunggah foto:", err);
+      alert("Terjadi kesalahan saat menyimpan foto. Silakan coba lagi.");
+    } finally {
+      setIsUploading(false);
     }
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
-    const mobileLink = `${baseUrl}/p/${uniqueId}`;
-    setResultUrl(mobileLink);
-    setStep("RESULT");
   };
 
   return (
-    <main className="min-h-screen bg-[url('/assets/bg-pattern.jpg')] bg-cover bg-center flex flex-col items-center justify-between relative overflow-hidden select-none">
-      {/* Overlay Putih Transparan agar Dedaunan Kelihatan Estetik & Teks Tetap Jelas */}
-      <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-0" />
+    <main className="min-h-screen w-full bg-[url('/assets/bg-pattern.jpg')] bg-cover bg-center bg-fixed flex flex-col items-center justify-between p-3 sm:p-4 md:p-6 font-sans relative overflow-x-hidden select-none">
+      {/* Background Overlay Transparan */}
+      <div className="fixed inset-0 bg-white/80 pointer-events-none z-0" />
 
-      {/* Layar Standby/Idle */}
-      {step === "IDLE" && (
-        <div className="w-full min-h-screen flex flex-col items-center justify-between p-6 md:p-8 relative font-sans">
-          {/* Logo Atas */}
-          <div className="pt-6">
-            <img
-              src="/assets/logos.png"
-              alt="Logos OASE & UIN"
-              className="h-20 md:h-24 object-contain drop-shadow-sm"
-            />
-          </div>
-
-          {/* Konten Utama */}
-          <div className="flex flex-col items-center text-center my-auto px-4">
-            {/* Pill Event (Posisi sudah diturunkan ke dekat judul) */}
-            <span className="mb-4 px-6 py-2 bg-[#388D93]/10 border border-[#388D93]/20 text-[#388D93] text-xs md:text-sm font-bold rounded-full tracking-widest uppercase">
-              EXPO OASE III 2026 — UIN SMH BANTEN
+      {/* HEADER IDENTITAS EXPO */}
+      <header className="relative z-10 w-full max-w-6xl flex items-center justify-between pt-2 pb-2 px-3 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs mb-2">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/assets/logos.png"
+            alt="Logo UIN SMH Banten"
+            className="h-8 md:h-10 object-contain"
+          />
+          <div className="flex flex-col">
+            <span className="text-[10px] md:text-xs font-bold text-[#388D93] tracking-widest uppercase">
+              EXPO OASE III 2026
             </span>
+            <span className="text-xs md:text-sm font-extrabold text-slate-800 leading-tight">
+              UIN SMH Banten
+            </span>
+          </div>
+        </div>
 
-            {/* Judul Utama */}
-            <h1 className="text-4xl md:text-6xl font-extrabold text-[#388D93] tracking-tight drop-shadow-sm leading-tight mb-3">
-              Capture Your Moment With Us
-            </h1>
+        {/* Status Indicator */}
+        <div className="flex items-center gap-1.5 bg-[#388D93]/10 px-3 py-1 rounded-full border border-[#388D93]/20">
+          <span className="w-2 h-2 rounded-full bg-[#388D93] animate-pulse" />
+          <span className="text-[11px] font-bold text-[#388D93] uppercase tracking-wider">
+            {step}
+          </span>
+        </div>
+      </header>
 
-            {/* Subteks Lurus Panjang Tanpa Enter */}
-            <p className="text-base md:text-lg font-medium text-slate-600 whitespace-nowrap mb-6">
-              Abadikan keseruanmu di Stand Kontingen UIN Sultan Maulana
-              Hasanuddin Banten!
-            </p>
-
-            {/* Alur Kerja Tanpa Emoji */}
-            <div className="flex items-center gap-3 md:gap-5 mb-8 text-xs md:text-sm font-semibold text-[#388D93]">
-              <span className="bg-white/90 px-4 py-1.5 rounded-xl border border-slate-200/80 shadow-sm">
-                Ambil Foto
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="bg-white/90 px-4 py-1.5 rounded-xl border border-slate-200/80 shadow-sm">
-                Pilih Bingkai
-              </span>
-              <span className="text-slate-300">•</span>
-              <span className="bg-white/90 px-4 py-1.5 rounded-xl border border-slate-200/80 shadow-sm">
-                Scan QR
-              </span>
+      {/* AREA UTAMA SETIAP TAHAP */}
+      <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center my-auto animate-fadeIn">
+        {step === "IDLE" && (
+          <div className="flex flex-col items-center justify-center text-center p-6 md:p-10 max-w-2xl bg-white/90 backdrop-blur-md rounded-3xl border border-slate-200 shadow-2xl my-auto">
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <img
+                src="/assets/mascot-left.png"
+                alt="Maskot Kiri"
+                className="w-14 sm:w-20 md:w-24 object-contain drop-shadow-md"
+              />
+              <img
+                src="/assets/mascot-right.png"
+                alt="Maskot Kanan"
+                className="w-14 sm:w-20 md:w-24 object-contain drop-shadow-md"
+              />
             </div>
 
-            {/* Tombol Start */}
+            <h1 className="text-xl sm:text-2xl md:text-4xl font-black text-slate-800 tracking-tight leading-tight">
+              Abadikan Momen Kamu di Stand Kontingen UIN SMH Banten EXPO OASE
+              III 2026
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 mt-3 max-w-lg">
+              Ambil foto menarik bersama teman-teman, pilih desain bingkai
+              eksklusif, dan unduh hasilnya secara instant melalui QR Code.
+            </p>
+
             <button
               type="button"
-              onClick={() => setStep("CAMERA")}
-              className="px-14 md:px-16 py-4 bg-[#388D93] hover:bg-[#2e7479] text-white text-2xl md:text-3xl font-extrabold rounded-full shadow-lg hover:shadow-xl transition-all active:scale-95 cursor-pointer border-2 border-white/40"
+              onClick={handleStart}
+              className="mt-8 px-8 sm:px-10 py-4 bg-[#388D93] hover:bg-[#2e7479] text-white text-base sm:text-lg font-extrabold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-200 active:scale-95 cursor-pointer tracking-wide flex items-center gap-3"
             >
-              Start Photo
+              <span>Mulai Foto</span>
+              <span className="text-xl">📸</span>
             </button>
+          </div>
+        )}
 
-            <span className="mt-3 text-xs text-slate-400 font-medium">
-              Sentuh tombol Start untuk memulai jepretan
+        {step === "CAMERA" && (
+          <CameraFeed onCaptureComplete={handleCaptureComplete} />
+        )}
+
+        {step === "SELECTOR" && (
+          <FrameSelector
+            photos={capturedPhotos}
+            onConfirm={handleConfirmFrame}
+            onRetake={() => setStep("CAMERA")}
+          />
+        )}
+
+        {step === "RESULT" && (
+          <QrModal qrUrl={downloadUrl} onReset={() => setStep("IDLE")} />
+        )}
+      </div>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 w-full text-center py-2 text-[11px] font-medium text-slate-500">
+        © 2026 Stand Kontingen UIN Sultan Maulana Hasanuddin Banten
+      </footer>
+
+      {/* Loading Overlay Saat Upload Supabase */}
+      {isUploading && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-3xl flex flex-col items-center gap-3 shadow-2xl animate-fadeIn">
+            <div className="w-10 h-10 border-4 border-[#388D93] border-t-transparent rounded-full animate-spin" />
+            <span className="text-slate-800 font-extrabold text-sm">
+              Membuat QR Code & Menyimpan Foto...
             </span>
           </div>
-
-          {/* Maskot Kiri & Kanan */}
-          <img
-            src="/assets/mascot-left.png"
-            alt="Mascot Left"
-            className="absolute bottom-0 left-4 h-60 md:h-80 object-contain pointer-events-none drop-shadow-md"
-          />
-          <img
-            src="/assets/mascot-right.png"
-            alt="Mascot Right"
-            className="absolute bottom-0 right-4 h-60 md:h-80 object-contain pointer-events-none drop-shadow-md"
-          />
         </div>
-      )}
-      {/* Layar Kamera & Timer */}
-      {step === "CAMERA" && (
-        <CameraFeed onCaptureComplete={handleCaptureComplete} />
-      )}
-
-      {/* Layar Pilih Frame & Slot Foto */}
-      {step === "SELECTOR" && !isUploading && (
-        <FrameSelector
-          photos={rawPhotos}
-          onConfirm={handleConfirmFrame}
-          onRetake={() => setStep("CAMERA")}
-        />
-      )}
-
-      {/* Indikator Loading Upload */}
-      {isUploading && (
-        <div className="relative z-10 text-[#388D93] text-2xl font-bold animate-pulse">
-          Menyiapkan QR Code...
-        </div>
-      )}
-
-      {/* Layar Tampil QR Code */}
-      {step === "RESULT" && (
-        <QrModal photoUrl={resultUrl} onReset={() => setStep("IDLE")} />
       )}
     </main>
   );

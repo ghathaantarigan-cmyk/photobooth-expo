@@ -126,10 +126,10 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-7xl p-2 md:p-4 relative z-10 font-sans select-none my-auto">
-      <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-center justify-center w-full">
-        {/* FRAME KAMERA UTAMA (UKURAN DIPERBESAR MAX-W-4XL) */}
-        <div className="flex flex-col items-center w-full max-w-4xl shrink-0">
+    <div className="flex flex-col items-center justify-center w-full max-w-7xl p-2 sm:p-4 relative z-10 font-sans select-none my-auto">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 items-center justify-center w-full">
+        {/* KAMERA UTAMA */}
+        <div className="flex flex-col items-center w-full max-w-3xl shrink-0">
           <div className="relative w-full aspect-[16/9] bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
             <video
               ref={videoRef}
@@ -139,24 +139,24 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
               className="w-full h-full object-cover transform -scale-x-100"
             />
 
-            {/* Countdown Overlay tanpa blur */}
+            {/* Countdown Overlay (Tanpa Blur) */}
             {countdown !== null && (
-              <div className="absolute inset-0 bg-black/25 flex flex-col items-center justify-center z-20 pointer-events-none">
-                <span className="text-white text-8xl md:text-9xl font-black animate-ping drop-shadow-lg">
+              <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center z-20 pointer-events-none">
+                <span className="text-white text-7xl sm:text-8xl md:text-9xl font-black animate-ping drop-shadow-lg">
                   {countdown}
                 </span>
-                <span className="text-white text-xl font-bold mt-4 tracking-widest uppercase drop-shadow-md">
+                <span className="text-white text-sm sm:text-lg font-bold mt-2 tracking-widest uppercase drop-shadow-md">
                   Bersiap!
                 </span>
               </div>
             )}
           </div>
 
-          {/* Panel Tombol & Timer di Bawah Kamera */}
-          <div className="flex flex-wrap items-center justify-between w-full mt-4 gap-4 bg-white/90 p-4 rounded-2xl border border-slate-200 shadow-md">
-            {/* Timer 3 & 5 Detik */}
+          {/* Panel Kontrol di Bawah Kamera */}
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full mt-3 sm:mt-4 gap-3 bg-white/90 p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-md">
+            {/* Opsi Timer 3 & 5 Detik */}
             <div className="flex items-center gap-2">
-              <span className="text-xs md:text-sm font-bold text-[#388D93]">
+              <span className="text-xs sm:text-sm font-bold text-[#388D93]">
                 Timer:
               </span>
               {[3, 5].map((sec) => (
@@ -165,7 +165,7 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
                   type="button"
                   disabled={isShooting}
                   onClick={() => setTimerDuration(sec)}
-                  className={`px-4 py-2 rounded-xl text-xs md:text-sm font-extrabold transition cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-150 cursor-pointer active:scale-95 ${
                     timerDuration === sec
                       ? "bg-[#388D93] text-white shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -176,14 +176,14 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
               ))}
             </div>
 
-            {/* Tombol Foto / Lanjut */}
-            <div>
+            {/* Tombol Utama */}
+            <div className="w-full sm:w-auto">
               {capturedPhotos.length < 3 ? (
                 <button
                   type="button"
                   disabled={isShooting}
                   onClick={startFullSequence}
-                  className="px-10 py-3.5 bg-[#388D93] hover:bg-[#2e7479] disabled:opacity-50 text-white font-extrabold rounded-xl shadow-lg transition active:scale-95 cursor-pointer text-base md:text-lg"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#388D93] hover:bg-[#2e7479] disabled:opacity-50 text-white font-extrabold rounded-xl shadow-lg transition-all duration-150 active:scale-95 cursor-pointer text-sm sm:text-base"
                 >
                   {isShooting ? "Sedang Memfoto..." : "Mulai Foto (3x)"}
                 </button>
@@ -192,7 +192,7 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
                   type="button"
                   disabled={isShooting}
                   onClick={() => onCaptureComplete(capturedPhotos)}
-                  className="px-10 py-3.5 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold rounded-xl shadow-lg transition active:scale-95 cursor-pointer text-base md:text-lg"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold rounded-xl shadow-lg transition-all duration-150 active:scale-95 cursor-pointer text-sm sm:text-base"
                 >
                   Lanjut Pilih Bingkai →
                 </button>
@@ -201,16 +201,18 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
           </div>
         </div>
 
-        {/* PANEL SAMPING KANAN (3 FOTO THUMBNAIL) */}
-        <div className="flex flex-col gap-4 w-full max-w-xs bg-white/95 p-5 rounded-3xl border border-slate-200 shadow-xl shrink-0">
-          <h3 className="text-[#388D93] text-base font-extrabold tracking-wide">
-            Hasil Foto (3 Jepretan)
-          </h3>
-          <p className="text-[11px] text-slate-500 -mt-2">
-            Klik foto di bawah untuk melihat preview & mengulang foto.
-          </p>
+        {/* PANEL SAMPING: 3 THUMBNAIL (Horizontal di HP, Vertikal di Laptop) */}
+        <div className="flex flex-col gap-3 w-full max-w-3xl lg:max-w-xs bg-white/95 p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xl shrink-0">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[#388D93] text-sm sm:text-base font-extrabold tracking-wide">
+              Hasil Jepretan (3 Foto)
+            </h3>
+            <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
+              {capturedPhotos.length}/3
+            </span>
+          </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-3 lg:grid-cols-1 gap-2.5">
             {[0, 1, 2].map((idx) => {
               const photoSrc = capturedPhotos[idx];
               return (
@@ -219,9 +221,9 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
                   onClick={() =>
                     photoSrc && !isShooting && setPreviewIndex(idx)
                   }
-                  className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 transition cursor-pointer group ${
+                  className={`relative w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 transition-all duration-200 cursor-pointer group ${
                     photoSrc
-                      ? "border-[#388D93] hover:ring-4 hover:ring-[#388D93]/20 shadow-sm"
+                      ? "border-[#388D93] hover:ring-4 hover:ring-[#388D93]/20 shadow-xs"
                       : "border-dashed border-slate-300 bg-slate-50"
                   }`}
                 >
@@ -232,13 +234,13 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
                         alt={`Foto ${idx + 1}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold">
-                        🔍 Lihat Foto #{idx + 1}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[11px] font-bold">
+                        🔍 Lihat #{idx + 1}
                       </div>
                     </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs font-bold">
-                      Foto #{idx + 1}
+                      #{idx + 1}
                     </div>
                   )}
                 </div>
@@ -250,9 +252,9 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
 
       {/* MODAL PREVIEW FOTO */}
       {previewIndex !== null && capturedPhotos[previewIndex] && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-3xl max-w-lg w-full flex flex-col items-center gap-4 shadow-2xl relative">
-            <h4 className="text-[#388D93] text-lg font-extrabold">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white p-5 sm:p-6 rounded-3xl max-w-md w-full flex flex-col items-center gap-4 shadow-2xl relative">
+            <h4 className="text-[#388D93] text-base sm:text-lg font-extrabold">
               Preview Foto #{previewIndex + 1}
             </h4>
 
@@ -264,18 +266,18 @@ export default function CameraFeed({ onCaptureComplete }: CameraFeedProps) {
               />
             </div>
 
-            <div className="flex gap-3 w-full mt-2">
+            <div className="flex gap-3 w-full mt-1">
               <button
                 type="button"
                 onClick={() => setPreviewIndex(null)}
-                className="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition cursor-pointer text-sm"
+                className="w-1/2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition active:scale-95 cursor-pointer text-xs sm:text-sm border border-slate-200"
               >
                 Tutup
               </button>
               <button
                 type="button"
                 onClick={() => retakeSinglePhoto(previewIndex)}
-                className="w-1/2 py-3 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold rounded-xl shadow-md transition cursor-pointer text-sm"
+                className="w-1/2 py-3 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold rounded-xl shadow-md transition active:scale-95 cursor-pointer text-xs sm:text-sm"
               >
                 Ulang Foto Ini 📸
               </button>
