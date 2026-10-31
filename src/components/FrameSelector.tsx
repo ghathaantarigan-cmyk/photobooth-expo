@@ -14,7 +14,7 @@ export default function FrameSelector({
   onConfirm,
   onRetake,
 }: FrameSelectorProps) {
-  const [selectedFrame, setSelectedFrame] = useState<FrameConfig>(FRAMES[1]); // Default 3 Photos
+  const [selectedFrame, setSelectedFrame] = useState<FrameConfig>(FRAMES[0]);
   const [selectedPhotoIndices, setSelectedPhotoIndices] = useState<number[]>([
     0, 1, 2,
   ]);
@@ -35,6 +35,33 @@ export default function FrameSelector({
     const updated = [...selectedPhotoIndices];
     updated[slotIndex] = rawPhotoIndex;
     setSelectedPhotoIndices(updated);
+  };
+
+  const drawImageCover = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ) => {
+    const imgRatio = img.width / img.height;
+    const slotRatio = w / h;
+
+    let sx = 0;
+    let sy = 0;
+    let sw = img.width;
+    let sh = img.height;
+
+    if (imgRatio > slotRatio) {
+      sw = img.height * slotRatio;
+      sx = (img.width - sw) / 2;
+    } else {
+      sh = img.width / slotRatio;
+      sy = (img.height - sh) / 2;
+    }
+
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
   };
 
   useEffect(() => {
@@ -61,7 +88,14 @@ export default function FrameSelector({
         photoImg.src = photos[photoSrcIndex];
 
         photoImg.onload = () => {
-          ctx.drawImage(photoImg, slot.x, slot.y, slot.width, slot.height);
+          drawImageCover(
+            ctx,
+            photoImg,
+            slot.x,
+            slot.y,
+            slot.width,
+            slot.height,
+          );
           loadedCount++;
 
           if (loadedCount === totalSlots) {
@@ -82,27 +116,28 @@ export default function FrameSelector({
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 items-center justify-center p-6 w-full max-w-6xl">
-      {/* Live Preview Canvas */}
-      <div className="w-[300px] h-[533px] relative shadow-2xl rounded-xl overflow-hidden border-2 border-slate-700 bg-black">
+    <div className="flex flex-col lg:flex-row gap-8 items-center justify-center p-4 md:p-6 w-full max-w-7xl relative z-10 select-none font-sans pointer-events-auto my-auto">
+      {/* PREVIEW CANVAS HITAM (UKURAN DIPERBESAR KONSISTEN DENGAN KAMERA) */}
+      <div className="w-[360px] sm:w-[420px] md:w-[460px] aspect-[9/16] relative shadow-2xl rounded-3xl overflow-hidden border-4 border-slate-900 bg-black shrink-0">
         <canvas ref={canvasRef} className="w-full h-full object-contain" />
       </div>
 
-      {/* Control Panel */}
-      <div className="flex flex-col gap-6 w-full max-w-md">
+      {/* PANEL KENDALI KANAN */}
+      <div className="flex flex-col justify-between gap-6 w-full max-w-lg bg-white/95 p-6 md:p-8 rounded-3xl border border-slate-200 shadow-xl relative z-20 pointer-events-auto">
         <div>
-          <h3 className="text-white text-lg font-bold mb-2">
+          <h3 className="text-[#388D93] text-lg font-bold mb-3 tracking-wide">
             1. Pilih Jenis Frame
           </h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {FRAMES.map((frame: FrameConfig) => (
               <button
                 key={frame.id}
+                type="button"
                 onClick={() => handleSelectFrame(frame)}
-                className={`p-3 rounded-xl border text-sm font-bold transition ${
+                className={`p-3.5 rounded-xl border-2 text-xs md:text-sm font-bold transition cursor-pointer active:scale-95 ${
                   selectedFrame.id === frame.id
-                    ? "bg-blue-600 border-blue-400 text-white"
-                    : "bg-slate-800 border-slate-700 text-slate-300"
+                    ? "bg-[#388D93] border-[#388D93] text-white shadow-md"
+                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
                 }`}
               >
                 {frame.name}
@@ -111,49 +146,48 @@ export default function FrameSelector({
           </div>
         </div>
 
-        {/* Pemilihan Foto untuk Frame 2 atau 3 */}
-        {selectedFrame.photoCount < 4 && (
-          <div>
-            <h3 className="text-white text-lg font-bold mb-2">
-              2. Pilih Foto Yang Dipakai
-            </h3>
-            <div className="flex flex-col gap-3">
-              {selectedFrame.slots.map((_: FrameSlot, slotIdx: number) => (
-                <div key={slotIdx} className="flex items-center gap-2">
-                  <span className="text-slate-400 text-xs w-16">
-                    Slot {slotIdx + 1}:
-                  </span>
-                  <div className="flex gap-2">
-                    {photos.map((p: string, pIdx: number) => (
-                      <img
-                        key={pIdx}
-                        src={p}
-                        alt={`Photo ${pIdx + 1}`}
-                        onClick={() => handleSwapSlotPhoto(slotIdx, pIdx)}
-                        className={`w-12 h-12 rounded-lg object-cover cursor-pointer border-2 transition ${
-                          selectedPhotoIndices[slotIdx] === pIdx
-                            ? "border-emerald-500 scale-110"
-                            : "border-transparent opacity-60"
-                        }`}
-                      />
-                    ))}
-                  </div>
+        <div>
+          <h3 className="text-[#388D93] text-lg font-bold mb-3 tracking-wide">
+            2. Atur Posisi Foto
+          </h3>
+          <div className="flex flex-col gap-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            {selectedFrame.slots.map((_: FrameSlot, slotIdx: number) => (
+              <div key={slotIdx} className="flex items-center gap-3">
+                <span className="text-slate-500 font-semibold text-xs w-16">
+                  Slot {slotIdx + 1}:
+                </span>
+                <div className="flex gap-2.5">
+                  {photos.map((p: string, pIdx: number) => (
+                    <img
+                      key={pIdx}
+                      src={p}
+                      alt={`Photo ${pIdx + 1}`}
+                      onClick={() => handleSwapSlotPhoto(slotIdx, pIdx)}
+                      className={`w-12 h-12 md:w-14 md:h-14 rounded-xl object-cover cursor-pointer border-3 transition transform ${
+                        selectedPhotoIndices[slotIdx] === pIdx
+                          ? "border-[#388D93] scale-105 shadow-md"
+                          : "border-transparent opacity-50 hover:opacity-100"
+                      }`}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
 
-        <div className="flex gap-4 mt-4">
+        <div className="flex gap-4 mt-2">
           <button
+            type="button"
             onClick={onRetake}
-            className="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl"
+            className="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-4 rounded-2xl transition active:scale-95 cursor-pointer text-base"
           >
             Ulang Foto
           </button>
           <button
+            type="button"
             onClick={handleGenerateFinalImage}
-            className="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg"
+            className="w-1/2 bg-[#388D93] hover:bg-[#2e7479] text-white font-extrabold py-4 rounded-2xl shadow-lg transition active:scale-95 cursor-pointer text-base"
           >
             Cetak QR Code
           </button>
