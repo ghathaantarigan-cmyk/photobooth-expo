@@ -8,52 +8,59 @@ export interface FrameSlot {
 export interface FrameConfig {
   id: string;
   name: string;
+  orientation: "PORTRAIT" | "LANDSCAPE";
   photoCount: number;
   image: string;
   slots: FrameSlot[];
 }
 
 export const FRAMES: FrameConfig[] = [
+  // ===================================================
+  // FRAME 1 — EXPO UIN (3 FOTO VERTIKAL) — JANGAN DIUBAH
+  // ===================================================
   {
-    id: "frame-2-v1",
-    name: "2 Foto (Model A)",
-    photoCount: 2,
-    image: "/frames/frame-2.png", // Mengarahkan ke file frame-2.png yang ada
-    slots: [
-      { x: 90, y: 180, width: 900, height: 675 },
-      { x: 90, y: 950, width: 900, height: 675 },
-    ],
-  },
-  {
-    id: "frame-2-v2",
-    name: "2 Foto (Model B)",
-    photoCount: 2,
-    image: "/frames/frame-2.png", // Mengarahkan ke file frame-2.png yang ada
-    slots: [
-      { x: 90, y: 180, width: 900, height: 675 },
-      { x: 90, y: 950, width: 900, height: 675 },
-    ],
-  },
-  {
-    id: "frame-3-v1",
-    name: "3 Foto (Model A)",
+    id: "portrait-3-expo",
+    name: "3 Foto (Model Expo UIN)",
+    orientation: "PORTRAIT",
     photoCount: 3,
-    image: "/frames/frame-3.png", // Mengarahkan ke file frame-3.png yang ada
+    image: "/frames/frame1.png",
     slots: [
-      { x: 90, y: 120, width: 900, height: 500 },
-      { x: 90, y: 680, width: 900, height: 500 },
-      { x: 90, y: 1240, width: 900, height: 500 },
+      { x: 150, y: 275, width: 850, height: 516 },
+      { x: 150, y: 850, width: 850, height: 515 },
+      { x: 150, y: 1410, width: 850, height: 524 },
     ],
   },
+
+  // ===================================================
+  // FRAME 2 — MODEL KLASIK (3 FOTO VERTIKAL)
+  // Berdasarkan frame2_4.jpg
+  // ===================================================
   {
-    id: "frame-3-v2",
-    name: "3 Foto (Model B)",
+    id: "portrait-3-model2",
+    name: "3 Foto (Model Klasik)",
+    orientation: "PORTRAIT",
     photoCount: 3,
-    image: "/frames/frame-3.png", // Mengarahkan ke file frame-3.png yang ada
+    image: "/frames/frame2.png",
     slots: [
-      { x: 90, y: 120, width: 900, height: 500 },
-      { x: 90, y: 680, width: 900, height: 500 },
-      { x: 90, y: 1240, width: 900, height: 500 },
+      { x: 150, y: 420, width: 872, height: 550 }, // Slot Atas
+      { x: 150, y: 1015, width: 872, height: 550 }, // Slot Tengah
+    ],
+  },
+
+  // ===================================================
+  // FRAME 3 — MODEL ESTETIK (3 FOTO VERTIKAL)
+  // Berdasarkan frame3_2.jpg
+  // ===================================================
+  {
+    id: "portrait-3-model3",
+    name: "3 Foto (Model Estetik)",
+    orientation: "PORTRAIT",
+    photoCount: 3,
+    image: "/frames/frame3.png",
+    slots: [
+      { x: 150, y: 250, width: 872, height: 550 }, // Slot Atas
+      { x: 150, y: 840, width: 872, height: 550 }, // Slot Tengah
+      { x: 150, y: 1400, width: 872, height: 525 }, // Slot Bawah
     ],
   },
 ];
